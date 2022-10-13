@@ -2,4 +2,8 @@ import scipy
 from scipy import linalg
 import numpy as np
 
-f = linalg.get_lapack_funcs('ggsvd3')
+v = np.array([[1], [3], [2]])
+q, r = np.linalg.qr(v, mode='complete')
+
+print(q)
+print(r)
