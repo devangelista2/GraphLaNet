@@ -2,6 +2,9 @@
 import scipy
 from scipy import optimize, sparse
 import numpy as np
+import operators
+
+import pygsvd
 
 from numba import jit, njit
 
@@ -48,7 +51,7 @@ def l2lq(A, b, L='TV', q=0.1, epsilon=None, mu=None, noise_norm=None, tau=1.01,
         raise ValueError
 
     if L == 'TV':
-        L = TV(n, m)
+        L = operators.TV(n, m)
     
     # Initialization
     if noise_norm is not None:
@@ -276,7 +279,8 @@ def gcv_funct(mu, s, l, bhat):
     return G
 
 def gsvd(A, B):
-    pass
+    C, S, X, U, V = pygsvd.gsvd(A, B)
+    return U, V, X, C, S
 
 def lanc_b(A, p, k):
     N = np.size(p)

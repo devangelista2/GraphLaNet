@@ -11,7 +11,7 @@ from numba import jit
 import solvers, operators
 
 # Import data
-base_path = 'C:/Users/Tivogatto/OneDrive - Alma Mater Studiorum Università di Bologna/Desktop/GraphLaNet'
+base_path = '.'
 
 data = io.loadmat(os.path.join(base_path, './COULE_mat/0'))
 A = io.loadmat(os.path.join(base_path, 'A.mat'))['A']
@@ -28,5 +28,8 @@ b = b + delta * np.random.normal(0, 1, b.shape)
 n = x_true.shape[0]
 m = data['sino'].shape[0]
 
+print(f"(m, n) = ({m}, {n})")
+"""
 L = operators.GraphLaplacian(x_true, 1e-3, 10)
 print(L.W.shape)
+"""
