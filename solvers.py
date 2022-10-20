@@ -61,55 +61,59 @@ def l2lq(A, b, L='TV', q=0.1, epsilon=None, mu=None, noise_norm=None, tau=1.01,
 
     k = 0
 
-    # Creating initial space
+    # Creating initial space (setup for bidiagonalization procedure)
     v = x
     nv = np.linalg.norm(v)
-    V = v / nv
+    V = v / nv # TODO: Why V is the normalization of x? (line 12 of the pseudocode)
     AV = A@V
 
     # Creating GraphLaplacian
     l = 20
-    xGCV = KTikhonovGenGCV(A, b, l, L)
-    L = computeL(xGCV.reshape((m, n)), sigmaInt, R)
+    xGCV = KTikhonovGenGCV(A, b, l, L) # Line 5-8 of the pseudo-code
+    L = computeL(xGCV.reshape((m, n)), sigmaInt, R) # Line 9-11 of the pseudo-code
 
     # Computing L^alpha*v using Lanczos
     d = 10
-    LV = computeLV(L, alpha, V, d)
+    LV = computeLV(L, alpha, V, d) # Here we are just multiplying L@V (since alpha=1)
+                                   # V is a vector -> LV is a vector
 
     # Initial QR factorization
-    QA, RA, _ = np.linalg.qr(AV)
-    QL, RL, _ = np.linalg.qr(LV)
-
+    QA, RA, _ = np.linalg.qr(AV, 'reduced')  # AV and LV are (n, 1) vectors ->
+    QL, RL, _ = np.linalg.qr(LV, 'reduced')  #   QA, QL are (n, n) matrices,
+                                             #   RA, RL are (n, 1) vectors with only
+                                             #   one non-zero element (the uppermost)
     # Initial weights
-    u = L@x
-    y = nv
+    u = L@x # For k=0, u0 = LV0 y0 = LV0 V0^T x = L x
+    y = nv # Since x = V nv and V^T V = 1, then V^T x = V^T V nv = nv
 
     # Begin MM iterations
     CONTINUE = True
     while CONTINUE:
         if k % rest == 0:
             # Restarting the Krylov subspace to save memory
-            x = V@y
+            x = V@y 
 
             del V, AV, LV, QA, RA, QL, RL
             V = x / np.linalg.norm(x)
             AV = A @ V
             LV = computeLV(L, alpha, V, d)
 
-            QA, RA, _ = np.linalg.qr(AV)
-            QL, RL, _ = np.linalg.qr(LV)
+            QA, RA = np.linalg.qr(AV, 'reduced')
+            QL, RL = np.linalg.qr(LV, 'reduced')
         # Store old iteration for stopping criteria
         y_old = y
 
         # Compute weights for approximating the q norm with the 2-norm
-        wr = u * (1 - ((u**2 + epsilon**2) / epsilon**2) ** (q/2 - 1))
+        wr = u * (1 - ((u**2 + epsilon**2) / epsilon**2) ** (q/2 - 1)) # line 18
+                                                    # is this an element-wise product?
 
         # Solve the re-weighted linear system selecting the parameters with DP
         c = epsilon ** (q-2)
         if mu is None:
-            eta = discrepancyPrinciple(delta, RA, RL, QA, QL, b, wr, c)
+            eta = discrepancyPrinciple(delta, RA, RL, QA, QL, b, wr, c) # line 20
         else:
-            eta = mu * c
+            eta = mu * c # line 19 of the pseudocode
+        # compute y line 21 of the pseudocode
         y = np.linalg.solve(np.concatenate([RA, np.sqrt(eta)*RL], axis=1), np.concatenate([QA.T@b, np.sqrt(eta)*(QL.T@wr)], axis=1))
 
         # Check stopping criteria
@@ -117,15 +121,15 @@ def l2lq(A, b, L='TV', q=0.1, epsilon=None, mu=None, noise_norm=None, tau=1.01,
 
         if k < maxit and (k+1) % rest != 0:
             # Enlarge the space and update QR factorization
-            v = AV @ y - b
-            u = LV @ y 
-            ra = v
-            ra = A.T @ ra
-            rb = (u - wr)
-            rb = L.T @ rb
-            r = ra + eta*rb
-            r = r - V@(V.T@r)
-            r = r - V@(V.T@r)
+            v = AV @ y - b # AV is a vector -> AV @ y is a scalar. ???? No corr. in paper
+            u = LV @ y     # LV is a vecotr -> LV @ y is a scalar. ????
+            ra = v         # vector
+            ra = A.T @ ra  # vector -> ra = A^T (AV y - b)
+            rb = (u - wr)  # vector
+            rb = L.T @ rb  # L^T (LVy - wr)
+            r = ra + eta*r # Line 22 
+            r = r - V@(V.T@r) # Line 23
+            r = r - V@(V.T@r) # why twice??
             AV, LV, QA, RA, QL, RL, V = updateQR(A, L, AV, LV, QA, RA, QL, RL, V, r, alpha, d)
         
         # Update step
@@ -206,13 +210,14 @@ def discrepancyPrinciple(delta, RA, RL, QA, QL, b, wr, c):
 
 
 def updateQR(A, L, AV, LV, QA, RA, QL, RL, V, r, alpha, d):
-    vn = r / np.linalg.norm(r)
-    Avn = A @ vn
-    AV = np.concatenate([AV, Avn], axis=0)
+    vn = r / np.linalg.norm(r) # Line 24
+    Avn = A @ vn               # Avnew = A r / ||r||
+    AV = np.concatenate([AV, Avn], axis=0) # AV_k+1 = [AV_k, vnew]
     
-    Lvn = computeLV(L, alpha, vn, d)
-    LV = np.concatenate([V, vn], axis=0)
+    Lvn = computeLV(L, alpha, vn, d)       # L vnew
+    LV = np.concatenate([V, vn], axis=0)   # LV_k+1 = [LV_k, vnew]
 
+    # ??? How does QR update works for A
     rA = QA.T @ Avn
     qA = Avn - QA @ rA
     ta = np.linalg.norm(qA)
@@ -220,6 +225,8 @@ def updateQR(A, L, AV, LV, QA, RA, QL, RL, V, r, alpha, d):
     QA = np.concatenate([QA, qtA], axis=0)
     RA = np.concatenate([np.concatenate([RA, rA], axis=0),
                          np.concatenate([np.zeros((1, len(rA))), ta], axis=0)], axis=1)
+    
+    # Same as QR update for A
     rL = QL.T @ Lvn
     qL = Lvn - QL @ rL
     tL = np.linalg.norm(qL)
