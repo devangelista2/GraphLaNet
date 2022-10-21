@@ -67,9 +67,8 @@ class GraphLaplacian():
         W = sparse.csr_matrix((vW, (iW, jW)), (self.n, self.n))
         A = W
         W = W / sparse.linalg.norm(W, 'fro')
-
-        d = W.sum()
-        D = sparse.spdiags(d.T, 0, self.n, self.n)
+        d = W.sum(axis=0)
+        D = sparse.spdiags(d[0, :], 0, self.n, self.n)
         L = D - W
 
         return L, W, D, A
@@ -77,7 +76,6 @@ class GraphLaplacian():
 
 @njit()
 def utils_for_L(I, R, sigmaInt):
-    R = R-1
     nr, nc = I.shape
     n = nr * nc # n° nodes of the graph = n° of pixels
 
@@ -88,8 +86,8 @@ def utils_for_L(I, R, sigmaInt):
 
     for x1 in range(nc):
         for y1 in range(nr):
-            for x2 in range(max([x1-R, 0]), min([x1+R, nc])):
-                for y2 in range(max([y1-R, 0]), min([y1+R, nr])):
+            for x2 in range(max([x1-R, 0]), min([x1+R+1, nc])):
+                for y2 in range(max([y1-R, 0]), min([y1+R+1, nr])):
                     node1 = y1 * nr + x1
                     node2 = y2 * nr + x2
                     if x1 != x2 or y1 != y2:
@@ -98,8 +96,8 @@ def utils_for_L(I, R, sigmaInt):
                         jW[k] = node2
                         vW[k] = np.exp(-dist**2/sigmaInt)
                         k = k+1
-    iW = iW[:k-1]
-    jW = jW[:k-1]
-    vW = vW[:k-1]
+    iW = iW[:k]
+    jW = jW[:k]
+    vW = vW[:k]
 
     return iW, jW, vW
