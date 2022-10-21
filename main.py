@@ -43,7 +43,7 @@ q = 1
 rest = 30
 
 # Compute solution
-xTV = solvers.GraphLaTV(A, b, mu=10, R=3, sigmaInt=1e-3, q=1, n=n, m=m, rest=30)
+xTV = solvers.GraphLaTV(A, b, mu=150, R=3, sigmaInt=1e-3, q=1, n=n, m=m, rest=30)
 
 # Save the solution
 plt.imsave('xTV.png', xTV.reshape((m, n)), cmap='gray')

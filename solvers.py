@@ -39,11 +39,10 @@ def GraphLaTV(A, b, q=0.1, epsilon=None, mu=None, maxit=200, tol=1e-4, rest=30, 
     
     if epsilon is None:
         epsilon = 1e-2 / b.max()
-
-    if L == 'TV':
-        L = operators.TV(n, m)
     
     # Initialization
+    L = operators.TV(n, m)
+    
     b = np.expand_dims(b.flatten(), 1) # Vectorize b
     x = A.T @ b
 

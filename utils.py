@@ -47,7 +47,10 @@ def KTikhonovGenGCV(A, b, k, L, mu=145):
     e[0] = np.linalg.norm(b)
 
     # Compute the QR of LV
-    LV = L @ V
+    lv = L @ V[:, 0]
+    LV = np.zeros((len(lv), k))
+    for j in range(k):
+        LV[:, j] = L @ V[:, j]
     _, R = np.linalg.qr(LV, 'reduced')
     
     # Compute the solution y in the GK Krylov subspace
