@@ -7,7 +7,7 @@ import operators
 import solvers
 import utils
 
-def GraphLaTV(A, b, q=0.1, epsilon=None, mu=None, maxit=200, tol=1e-4, rest=30, n=None, m=None, sigmaInt=1e-3, R=10):
+def GraphLaNet(A, b, L, q=0.1, epsilon=None, mu=None, maxit=200, tol=1e-4, rest=30, n=None, m=None, show=True):
     # This function solves the minimization problem 
     # 
     # x=argmin 1/2*||Ax-b||_2^2+mu/q*||LG^alpha*x||_q^q
@@ -40,9 +40,7 @@ def GraphLaTV(A, b, q=0.1, epsilon=None, mu=None, maxit=200, tol=1e-4, rest=30, 
     if epsilon is None:
         epsilon = 1e-2 / b.max()
     
-    # Initialization
-    L = operators.TV(n, m)
-    
+    # Initialization    
     b = np.expand_dims(b.flatten(), 1) # Vectorize b
     x = A.T @ b
 
@@ -53,14 +51,6 @@ def GraphLaTV(A, b, q=0.1, epsilon=None, mu=None, maxit=200, tol=1e-4, rest=30, 
     nv = np.linalg.norm(v)
     V = v / nv
     AV = A@V
-
-    # Creating GraphLaplacian
-    print("Creating Graph Laplacian")
-    l = 20
-    xGCV = utils.KTikhonovGenGCV(A, b, l, L) # Line 5-8 of the pseudo-code
-    L = operators.GraphLaplacian(xGCV.reshape((256, 256)), sigmaInt, R).L # Line 9-11 of the pseudo-code
-    print("Done!")
-    print("")
 
     # Computing L^alpha*v using Lanczos
     LV = L @ V # Here we are just multiplying L@V (since alpha=1)
@@ -120,7 +110,14 @@ def GraphLaTV(A, b, q=0.1, epsilon=None, mu=None, maxit=200, tol=1e-4, rest=30, 
         
         # Update step
         k = k + 1
-        print(f"Actual step: {k}")
+
+        if show:
+            print(f"Actual step: {k}")
 
     # Exit
     return np.reshape(V@y, (256, 256))
+
+
+
+def UNet(weights_name):
+    pass
