@@ -84,12 +84,12 @@ def utils_for_L(I, R, sigmaInt):
     jW = np.zeros(((2*R + 1) ** 2 * n, ))
     vW = np.zeros(((2*R + 1) ** 2 * n, ))
 
-    for x1 in range(nc):
-        for y1 in range(nr):
-            for x2 in range(max([x1-R, 0]), min([x1+R+1, nc])):
-                for y2 in range(max([y1-R, 0]), min([y1+R+1, nr])):
-                    node1 = y1 * nr + x1
-                    node2 = y2 * nr + x2
+    for x1 in range(nr):
+        for y1 in range(nc):
+            for x2 in range(max([x1-R, 0]), min([x1+R+1, nr])):
+                for y2 in range(max([y1-R, 0]), min([y1+R+1, nc])):
+                    node1 = x1 * nr + y1
+                    node2 = x2 * nr + y2
                     if x1 != x2 or y1 != y2:
                         dist = I[x1, y1] - I[x2, y2]
                         iW[k] = node1

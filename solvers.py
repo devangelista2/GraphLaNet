@@ -117,7 +117,28 @@ def GraphLaNet(A, b, L, q=0.1, epsilon=None, mu=None, maxit=200, tol=1e-4, rest=
     # Exit
     return np.reshape(V@y, (256, 256))
 
+def TikTV(A, b, k, L, mu=145):
+    # Solves the Tikhonov problem in general form 
+    # x = argmin || Ax - b ||^2 + mu * ||Lx||
+    # in the GK Krylov subspace of dimension k, with mu set by the user.
 
+    # Compute the matrices B and V of Lanczos bidiagonalization
+    _, B, V = utils.lanc_b(A, b, k)
+
+    # Define vector e with e[0] = || b ||, e[1:] = 0
+    e = np.zeros((2*k+1, 1))
+    e[0] = np.linalg.norm(b)
+
+    # Compute the QR of LV
+    lv = L @ V[:, 0]
+    LV = np.zeros((len(lv), k))
+    for j in range(k):
+        LV[:, j] = L @ V[:, j]
+    _, R = np.linalg.qr(LV, 'reduced')
+    
+    # Compute the solution y in the GK Krylov subspace
+    y = np.linalg.lstsq(np.concatenate([B, np.sqrt(mu) * R], axis=0), e, rcond=-1)[0]
+    return V @ y
 
 def UNet(weights_name):
     pass

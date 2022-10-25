@@ -11,8 +11,8 @@ def updateQR(A, L, AV, LV, QA, RA, QL, RL, V, r):
     
     # Update for V
     Lvn = L @ vn
-    V = np.concatenate([V, vn], axis=1)   # LV_k+1 = [LV_k, vnew]
     LV = np.concatenate([LV, Lvn], axis=1)
+    V = np.concatenate([V, vn], axis=1)   # LV_k+1 = [LV_k, vnew]
 
     # Update for QA and RA such that A = QA * RA
     rA = QA.T @ Avn
