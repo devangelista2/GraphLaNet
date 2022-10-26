@@ -7,6 +7,8 @@ import operators
 import solvers
 import utils
 
+import tensorflow.keras
+
 def GraphLaNet(A, b, L, q=0.1, epsilon=None, mu=None, maxit=200, tol=1e-4, rest=30, n=None, m=None, show=True):
     # This function solves the minimization problem 
     # 
@@ -141,4 +143,4 @@ def TikTV(A, b, k, L, mu=145):
     return V @ y
 
 def UNet(weights_name):
-    pass
+    return tensorflow.keras.models.load_model(f"./model_weights/{weights_name}.h5")

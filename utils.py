@@ -105,3 +105,10 @@ def lanc_b(A, p, k):
         
 
     return U, B, V
+
+def predict(model, x):
+    x = np.expand_dims(x, 0)
+    x = np.expand_dims(x, 3)
+
+    x_pred = model.predict(x)
+    return x_pred[0, :, :, 0]

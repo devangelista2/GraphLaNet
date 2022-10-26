@@ -6,12 +6,12 @@ from scipy import io
 
 import os
 
-import solvers, operators, utils
+import solvers, operators, utils, metrics
 
 # Import data
 base_path = '.'
 
-data = io.loadmat('./COULE_mat/280.mat')
+data = io.loadmat('./COULE_mat/280')
 A = io.loadmat('./A.mat')['A']
 
 x_true = data['gt']
@@ -19,8 +19,8 @@ x_fbp = data['fbp']
 b = np.expand_dims(A @ x_true.flatten(), 1)
 
 # Save x_true for visualization
-plt.imsave('xtrue.png', x_true, cmap='gray')
-plt.imsave('xFBP.png', x_fbp, cmap='gray')
+plt.imsave('results/xtrue.png', x_true, cmap='gray')
+plt.imsave('results/xFBP.png', x_fbp, cmap='gray')
 
 # Shave the shape of x
 m, n = x_true.shape
@@ -54,18 +54,15 @@ if True:
     print("Done!")
     print("")
 
-    # Visualize Lx_true
-    Lxtrue = L@x_true
-
     # Problem parameters 
     q = 1
     rest = 30
 
     # Compute solution
-    xbest = solvers.GraphLaNet(A, b, L, mu=500, q=1, n=n, m=m, rest=30, show=True)
+    xLaTrue = solvers.GraphLaNet(A, b, L, mu=5000, q=1, n=n, m=m, rest=30, show=True)
 
     # Save the solution
-    plt.imsave('xbest.png', xbest.reshape((m, n)), cmap='gray')
+    plt.imsave('results/xLaTrue.png', xLaTrue.reshape((m, n)), cmap='gray')
 
 """
 Starting point computed by some iteration of TV-Tikhonov regularization.
@@ -77,10 +74,10 @@ if True:
     # Compute the reference point x0 for the GraphLaplacian
     L = operators.TV(m, n)
     l = 20
-    xGCV = solvers.TikTV(A, np.expand_dims(b.flatten(), 1), l, L)
+    xTV = solvers.TikTV(A, np.expand_dims(b.flatten(), 1), l, L)
 
     # Get the Graph Laplacian
-    L = operators.GraphLaplacian(xGCV.reshape((m, n)), sigmaInt, R).L # Line 9-11 of the pseudo-code
+    L = operators.GraphLaplacian(xTV.reshape((m, n)), sigmaInt, R).L # Line 9-11 of the pseudo-code
     print("Done!")
     print("")
 
@@ -89,24 +86,27 @@ if True:
     rest = 30
 
     # Compute solution
-    xTV = solvers.GraphLaNet(A, b, L, mu=500, q=1, n=n, m=m, rest=30, show=True)
+    xLaTV = solvers.GraphLaNet(A, b, L, mu=5000, q=1, n=n, m=m, rest=30, show=True)
 
     # Save the solution
-    plt.imsave('xTV.png', xTV.reshape((m, n)), cmap='gray')
+    plt.imsave('results/xTV.png', xTV.reshape((m, n)), cmap='gray')
+    plt.imsave('results/xLaTV.png', xLaTV.reshape((m, n)), cmap='gray')
 
 """
 Starting point computed by NN
 """
-if False:
+if True:
     # Get GraphLaplacian
     print("Creating Graph Laplacian")
 
     # Compute the reference point x0 for the GraphLaplacian
-    weights_name = ""
-    xNN = solvers.UNet(weights_name)
+    weights_name = "nn_unet_0"
+    #model = solvers.UNet(weights_name)
+    #xNet = utils.predict(model, x_fbp)
+    xNet = data['recon']
 
     # Get the Graph Laplacian
-    L = operators.GraphLaplacian(xNN.reshape((m, n)), sigmaInt, R).L # Line 9-11 of the pseudo-code
+    L = operators.GraphLaplacian(xNet.reshape((m, n)), sigmaInt, R).L # Line 9-11 of the pseudo-code
     print("Done!")
     print("")
 
@@ -115,7 +115,28 @@ if False:
     rest = 30
 
     # Compute solution
-    xLaNet = solvers.GraphLaNet(A, b, L, mu=150, q=1, n=n, m=m, rest=30, show=True)
+    xLaNet = solvers.GraphLaNet(A, b, L, mu=5000, q=1, n=n, m=m, rest=30, show=True)
 
     # Save the solution
-    plt.imsave('xLaNet.png', xLaNet.reshape((m, n)), cmap='gray')
+    plt.imsave('results/xNet.png', xNet.reshape((m, n)), cmap='gray')
+    plt.imsave('results/xLaNet.png', xLaNet.reshape((m, n)), cmap='gray')
+
+
+"""
+Compute the metrics
+"""
+if True:
+    # Relative error
+    print(f"RE(x_true, xLaTrue) = {metrics.rel_err(xLaTrue, x_true)}")
+    print(f"RE(x_true, xTV) = {metrics.rel_err(xTV, x_true)}")
+    print(f"RE(x_true, xLaTV) = {metrics.rel_err(xLaTV, x_true)}")
+    print(f"RE(x_true, xNet) = {metrics.rel_err(xNet, x_true)}")
+    print(f"RE(x_true, xLaNet) = {metrics.rel_err(xLaNet, x_true)}")
+    print("")
+
+    # PSNR
+    print(f"PSNR(x_true, xLaTrue) = {metrics.PSNR(x_true, xLaTrue)}")
+    print(f"PSNR(x_true, xTV) = {metrics.PSNR(x_true, xTV)}")
+    print(f"PSNR(x_true, xLaTV) = {metrics.PSNR(x_true, xLaTV)}")
+    print(f"PSNR(x_true, xNet) = {metrics.PSNR(x_true, xNet)}")
+    print(f"PSNR(x_true, xLaNet) = {metrics.PSNR(x_true, xLaNet)}")
