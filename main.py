@@ -43,6 +43,28 @@ sigmaInt = 1e-3
 R = 3
 
 """
+Starting point = x_fbp
+"""
+if True:
+    # Get GraphLaplacian
+    print("Creating Graph Laplacian")
+
+    # Get the Graph Laplacian
+    L = operators.GraphLaplacian(x_fbp.reshape((m, n)), sigmaInt, R).L # Line 9-11 of the pseudo-code
+    print("Done!")
+    print("")
+
+    # Problem parameters 
+    q = 1
+    rest = 30
+
+    # Compute solution
+    xLaFBP = solvers.GraphLaNet(A, b, L, mu=5000, q=1, n=n, m=m, rest=30, show=True)
+
+    # Save the solution
+    plt.imsave('results/xLaFBP.png', xLaFBP.reshape((m, n)), cmap='gray')
+
+"""
 Starting point = x_true
 """
 if True:
@@ -127,6 +149,8 @@ Compute the metrics
 """
 if True:
     # Relative error
+    print(f"RE(x_true, xFBP) = {metrics.rel_err(x_fbp, x_true)}")
+    print(f"RE(x_true, xLaFBP) = {metrics.rel_err(xLaFBP, x_true)}")
     print(f"RE(x_true, xLaTrue) = {metrics.rel_err(xLaTrue, x_true)}")
     print(f"RE(x_true, xTV) = {metrics.rel_err(xTV, x_true)}")
     print(f"RE(x_true, xLaTV) = {metrics.rel_err(xLaTV, x_true)}")
@@ -135,6 +159,8 @@ if True:
     print("")
 
     # PSNR
+    print(f"PSNR(x_true, xFBP) = {metrics.PSNR(x_true, x_fbp)}")
+    print(f"PSNR(x_true, xLaFBP) = {metrics.PSNR(x_true, xLaFBP)}")
     print(f"PSNR(x_true, xLaTrue) = {metrics.PSNR(x_true, xLaTrue)}")
     print(f"PSNR(x_true, xTV) = {metrics.PSNR(x_true, xTV)}")
     print(f"PSNR(x_true, xLaTV) = {metrics.PSNR(x_true, xLaTV)}")
